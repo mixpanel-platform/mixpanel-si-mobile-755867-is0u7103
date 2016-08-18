@@ -5,9 +5,16 @@
     <link rel="stylesheet" type="text/css" href="https://cdn.mxpnl.com/libs/mixpanel-platform/css/reset.css">
     <link rel="stylesheet" type="text/css" href="https://cdn.mxpnl.com/libs/mixpanel-platform/build/mixpanel-platform.v0.latest.min.css">
     <script src="https://cdn.mxpnl.com/libs/mixpanel-platform/build/mixpanel-platform.v0.latest.min.js"></script>
+    <link href="//maxcdn.bootstrapcdn.com/bootstrap/3.3.6/css/bootstrap.min.css" rel="stylesheet">
+    <script src="//maxcdn.bootstrapcdn.com/bootstrap/3.3.6/js/bootstrap.min.js"></script>
   </head>
   <body class="mixpanel-platform-body">
     <div class="mixpanel-platform-section">
+      <div class="row">
+        <div class="col-sm-12">
+          <h1 class="text-center text-muted"><u>Event Counts by Day of Week</u></h1>
+        </div>
+      </div>
       <div id="dateSelect" style="float: right;"></div>
       <div style="clear: both;"></div>
       <div id="graph"></div>
@@ -22,17 +29,78 @@
       });
 
       var runQuery = function() {
-        var eventName = eventSelect.MPEventSelect('value'),
-            propName  = propSelect.MPPropertySelect('value'),
-            dateRange = dateSelect.MPDatepicker('value');
-
-        if (eventName) {
-          MP.api.segment(eventName, propName, dateRange).done(function(results) {
-            eventGraph.MPChart('setData', results);
-            eventTable.MPTable('setData', results);
-          });
+        dateRange = dateSelect.MPDatepicker('value');
+        console.log(dateRange);
+        var today = new Date(dateRange.to).toISOString().split('T')[0]
+        var t = new Date()
+        var thisWeek = new Date(dateRange.from).toISOString().split('T')[0]
+        var params ={
+          start_date: thisWeek,
+          end_date: today
         }
+        console.log("start date from picker",params.start_date);
+        console.log("from date from picker",params.end_date);
+        MP.api.jql(function main() {
+          return Events({
+            from_date: params.start_date,
+            to_date:   params.end_date
+            //event_selectors:[{event:'10 Spot Viewed'},{event:'Article Selected'},{event:'MySI Viewed'},{event:'News Viewed'},{event:'Olypics Viewed'},{event:'Score Viewed'}]
+          })
+          .groupBy(["name",function(event){ return new Date(event.time).getDay()}], mixpanel.reducer.count())
+          .map(function(item){
+            return {
+              "*Event*": item.key[0],
+              "Day of Week": item.key[1],
+              "Tally of Views": item.value
+            }
+          })
+        }, params
+        ).done(function(results){
+          var data = []
+          var segment = {}
+          console.log(results);
+          _.each(results, function(value){
+            segment[value['*Event*']] ={}
+          })
+          _.each(results, function(value){
+            _.each(segment, function (object, key) {
+              var day
+              if(key === value['*Event*']){
+                if(value['Day of Week'] === 0){
+                  day = "Sunday"
+                }else if (value['Day of Week'] === 1) {
+                  day = "Monday"
+                }else if (value['Day of Week'] === 2) {
+                  day = "Tuesday"
+                }else if (value['Day of Week'] === 3) {
+                  day = "Wednesday"
+                }else if (value['Day of Week'] === 4) {
+                  day = "Thursday"
+                }else if (value['Day of Week'] === 5) {
+                  day = "Friday"
+                }else if (value['Day of Week'] === 6) {
+                  day = "Saturday"
+                }
+                segment[value['*Event*']][day] = value['Tally of Views']
+              }
+            })
+          })
+          console.log(segment);
+          var chart = $('#graph').MPChart({chartType: 'line', highchartsOptions: {
+            legend: {
+              enabled: false,
+              y: -7
+            }
+          }})
+          chart.MPChart('setData', segment)
+          var table = $('#table').MPTable({
+            showPercentages: true,
+            firstColHeader: 'Events By Day of Week'
+          })
+          //table.MPTable('setData',segment)
+        })
       };
+      runQuery()
       dateSelect.on('change', runQuery);
     </script>
   </body>

@@ -358,7 +358,7 @@ var runEventQuery = function(eventName, propName, dateRange, bucket) {
                 }else{
                   time = a -12 + " pm"
                 }
-                return "<b>Hour in day: </b>" + time + "</br><b>Number of " + eventName + "s in : </b>" + this.y
+                return "<b>Hour in day: </b>" + time + "</br><b>Number of " + eventName + " : </b>" + this.y
               }
             },
             xAxis:{
@@ -464,7 +464,7 @@ var runEventQuery = function(eventName, propName, dateRange, bucket) {
                 }else if (this.x === 6) {
                   dayInWeek = "Sunday"
                 }
-                return "<b>Day of the week: </b>" + dayInWeek + "</br><b>Number of " + eventName + "s in : </b>" + this.y
+                return "<b>Day of the week: </b>" + dayInWeek + "</br><b>Number of " + eventName + " : </b>" + this.y
               }
             },
             xAxis:{
@@ -581,7 +581,7 @@ var runEventQuery = function(eventName, propName, dateRange, bucket) {
                 }else{
                   time = a -12 + " pm"
                 }
-                return "<b>Hour in day: </b>" + time + "</br><b>Number of " + this.series.name + "s in : </b>" + this.y
+                return "<b>Hour in day: </b>" + time + "</br><b>Number of " + this.series.name + " : </b>" + this.y
               }
             },
             xAxis:{
@@ -688,7 +688,7 @@ var runEventQuery = function(eventName, propName, dateRange, bucket) {
                 }else if (this.x === 6) {
                   dayInWeek = "Sunday"
                 }
-                return "<b>Day of the week: </b>" + dayInWeek + "</br><b>Number of " + eventName + "s in : </b>" + this.y
+                return "<b>Day of the week: </b>" + dayInWeek + "</br><b>Number of " + eventName + " : </b>" + this.y
               }
             },
             xAxis:{

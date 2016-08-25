@@ -67,15 +67,15 @@ var runEventQuery = function(eventName, propName, dateRange, bucket) {
           segment[value['Property']] ={}  //cre
         })
         _.each(results, function(value){  //give a value to all times of the day so that if an event later does not havea value we still assign it a value. if each event we graph doesn't have 24 values highcharts will not graph properly
-          var i = 1
-          while (i < 25) {
+          var i = 0
+          while (i < 24) {
             var time
-            if(i < 12){
+            if (i === 0) {
+              time = "12 am"
+            }else if(i < 12 && i !== 0){
               time = i + " am"
             }else if (i === 12) {
               time = i + " pm"
-            }else if(i === 24){
-              time = i - 12 + " am"
             }else{
               time = i -12 + " pm"
             }
@@ -116,15 +116,15 @@ var runEventQuery = function(eventName, propName, dateRange, bucket) {
           },
           tooltip: {
             formatter: function () {
-              var a = this.x + 1
-              if(a < 12){
-                time = a + " am"
-              }else if (a === 12) {
-                time = a + " pm"
-              }else if(a === 24){
-                time = a - 12 + " am"
+              var i = this.x + 1
+              if (i === 0) {
+                time = "12 am"
+              }else if(i < 12 && i !== 0){
+                time = i + " am"
+              }else if (i === 12) {
+                time = i + " pm"
               }else{
-                time = a -12 + " pm"
+                time = i -12 + " pm"
               }
               return "<b>Hour in day: </b>" + time  + "</br><b>Number of " + eventName + "s in " + this.series.name + " : </b>" + this.y
             }
@@ -302,12 +302,12 @@ var runEventQuery = function(eventName, propName, dateRange, bucket) {
             var i = 1
             while (i < 25) {
               var time
-              if(i < 12){
+              if (i === 0) {
+                time = "12 am"
+              }else if(i < 12 && i !== 0){
                 time = i + " am"
               }else if (i === 12) {
                 time = i + " pm"
-              }else if(i === 24){
-                time = i - 12 + " am"
               }else{
                 time = i -12 + " pm"
               }
@@ -317,18 +317,17 @@ var runEventQuery = function(eventName, propName, dateRange, bucket) {
           })
           _.each(results, function(value){
             _.each(segment, function (object, key) {
-              var a = value['Day of Week']
-              a += 1  //add one to get time denotion to be at index 1 not 0
+              var i = value['Day of Week']
               var time
               //modify the key value of the data object so that highcharts can properly order the data. if just number is passed highcharts throws error
-              if(a < 12){
-                time = a + " am"
-              }else if (a === 12) {
-                time = a + " pm"
-              }else if(a === 24){
-                time = a - 12 + " am"
+              if (i === 0) {
+                time = "12 am"
+              }else if(i < 12 && i !== 0){
+                time = i + " am"
+              }else if (i === 12) {
+                time = i + " pm"
               }else{
-                time = a -12 + " pm"
+                time = i -12 + " pm"
               }
               segment[value['*Event*']][time] = value['Tally of Views']
             })
@@ -348,15 +347,15 @@ var runEventQuery = function(eventName, propName, dateRange, bucket) {
             },
             tooltip: {
               formatter: function () {
-                var a = this.x + 1
-                if(a < 12){
-                  time = a + " am"
-                }else if (a === 12) {
-                  time = a + " pm"
-                }else if(a === 24){
-                  time = a - 12 + " am"
+                var i = this.x + 1
+                if (i === 0) {
+                  time = "12 am"
+                }else if(i < 12 && i !== 0){
+                  time = i + " am"
+                }else if (i === 12) {
+                  time = i + " pm"
                 }else{
-                  time = a -12 + " pm"
+                  time = i -12 + " pm"
                 }
                 return "<b>Hour in day: </b>" + time + "</br><b>Number of " + eventName + " : </b>" + this.y
               }
@@ -528,12 +527,12 @@ var runEventQuery = function(eventName, propName, dateRange, bucket) {
             var i = 1
             while (i < 25) {
               var time
-              if(i < 12){
+              if (i === 0) {
+                time = "12 am"
+              }else if(i < 12 && i !== 0){
                 time = i + " am"
               }else if (i === 12) {
                 time = i + " pm"
-              }else if(i === 24){
-                time = i - 12 + " am"
               }else{
                 time = i -12 + " pm"
               }
@@ -548,14 +547,14 @@ var runEventQuery = function(eventName, propName, dateRange, bucket) {
               a += 1  //add one to get time denotion to be at index 1 not 0
               var time
               //modify the key value of the data object so that highcharts can properly order the data. if just number is passed highcharts throws error
-              if(a < 12){
-                time = a + " am"
-              }else if (a === 12) {
-                time = a + " pm"
-              }else if(a === 24){
-                time = a - 12 + " am"
+              if (i === 0) {
+                time = "12 am"
+              }else if(i < 12 && i !== 0){
+                time = i + " am"
+              }else if (i === 12) {
+                time = i + " pm"
               }else{
-                time = a -12 + " pm"
+                time = i -12 + " pm"
               }
               segment[value['*Event*']][time] = value['Tally of Views']
             })
@@ -571,15 +570,15 @@ var runEventQuery = function(eventName, propName, dateRange, bucket) {
             },
             tooltip: {
               formatter: function () {
-                var a = this.x + 1
-                if(a < 12){
-                  time = a + " am"
-                }else if (a === 12) {
-                  time = a + " pm"
-                }else if(a === 24){
-                  time = a - 12 + " am"
+                var i = this.x + 1
+                if (i === 0) {
+                  time = "12 am"
+                }else if(i < 12 && i !== 0){
+                  time = i + " am"
+                }else if (i === 12) {
+                  time = i + " pm"
                 }else{
-                  time = a -12 + " pm"
+                  time = i -12 + " pm"
                 }
                 return "<b>Hour in day: </b>" + time + "</br><b>Number of " + this.series.name + " : </b>" + this.y
               }

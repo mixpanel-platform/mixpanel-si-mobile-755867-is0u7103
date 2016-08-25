@@ -206,7 +206,6 @@
             }
           }
           var stringVersion = JSON.stringify(query)
-          console.log('JSON version of data',stringVersion);
           var encoded = window.btoa(stringVersion)
           $.ajax({
             url: "https://api.mixpanel.com/track/?data="+encoded

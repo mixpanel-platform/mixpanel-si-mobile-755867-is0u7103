@@ -7,101 +7,254 @@
     <script src="https://cdn.mxpnl.com/libs/mixpanel-platform/build/mixpanel-platform.v0.latest.min.js"></script>
     <link href="//maxcdn.bootstrapcdn.com/bootstrap/3.3.6/css/bootstrap.min.css" rel="stylesheet">
     <script src="//maxcdn.bootstrapcdn.com/bootstrap/3.3.6/js/bootstrap.min.js"></script>
+
+    <!-- custom style -->
+    <link rel="stylesheet" type="text/css" href="css/style.css">
   </head>
   <body class="mixpanel-platform-body">
+    <script src="js/initialQuery.js" charset="utf-8"></script> <!--link to initial Query-->
+    <script src="js/eventQuery.js" charset="utf-8"></script> <!--link to other Query-->
     <div class="mixpanel-platform-section">
       <div class="row">
         <div class="col-sm-12">
-          <h1 class="text-center text-muted"><u>Event Counts by Day of Week</u></h1>
         </div>
       </div>
-      <div id="dateSelect" style="float: right;"></div>
+      <div class="row">
+        <div class="col-sm-12" id="selectors" style="margin: 10px 0px 10px 0px;">
+          <div class="pull-left"id="eventSelect" style=""></div>
+          <div id="by" class=" pull-left mixpanel-platform-label vcenter" style="margin: 3px 10px 3px 10px; display: none;">BY</div>
+          <div class="pull-left" id="propSelect" style=""></div>
+          <a class="contract pull-left" id=""style="display: none;"></a>
+          <a class="expand pull-left" id=""style="display: none;"></a>
+          <div class="pull-right"id="dateSelect"></div>
+          <div class="pull-right"id="bucketSelect" style="margin-right: 8px;"></div>
+        </div>
+      </div>
       <div style="clear: both;"></div>
-      <div id="graph"></div>
+      <div class="row">
+        <div class="col-sm-12" id="graph-container">
+          <div id="graph"></div>
+        </div>
+      </div>
     </div>
     <div id="table"></div>
     <script>
+      //info for tracking
+      var url = window.document.referrer.split('/mpplatform')[0]
+      var id = url.split('report/')[1]
+      //set option for someone to either look at data grouped by day of week or by hour in day
+      var options = {
+        items: [
+          {label: 'Day', value: "day"},
+          {label: 'Hour', value: 'hour'}
+        ]
+      };
+      var eventSelect = $('#eventSelect').MPEventSelect();
+      var propSelect  = $('#propSelect').MPPropertySelect();
       var dateSelect  = $('#dateSelect').MPDatepicker();
+      var bucketSelect  = $('#bucketSelect').MPSelect(options);
       var eventGraph  = $('#graph').MPChart({chartType: 'line'});
       var eventTable  = $('#table').MPTable({
         showPercentages: true,
         firstColHeader: 'Event'
       });
+      $('.contract').on('click', function(){
+        var eventName = eventSelect.MPEventSelect('value'),
+        dateRange = dateSelect.MPDatepicker('value'),
+        bucket = bucketSelect.MPSelect('value');
+        $('#propSelect').remove()
+        $('.contract').hide()
+        $('#by').hide()
+        $('.expand').show()
+        var propName = undefined
+        runEventQuery(eventName, propName, dateRange, bucket)
+      })
+      $('.expand').on('click', function(){
+        $('<div class="pull-left" id="propSelect"></div>').insertAfter('#by')
+        propSelect  = $('#propSelect').MPPropertySelect();
+        var eventName = eventSelect.MPEventSelect('value')
+        $('.contract').show()
+        $('#by').show()
+        propSelect.MPPropertySelect('setEvent', eventName);
+        $('.expand').hide()
+        propSelect.on('change', function(){
 
-      var runQuery = function() {
-        dateRange = dateSelect.MPDatepicker('value');
-        console.log(dateRange);
-        var today = new Date(dateRange.to).toISOString().split('T')[0]
-        var t = new Date()
-        var thisWeek = new Date(dateRange.from).toISOString().split('T')[0]
-        var params ={
-          start_date: thisWeek,
-          end_date: today
-        }
-        console.log("start date from picker",params.start_date);
-        console.log("from date from picker",params.end_date);
-        MP.api.jql(function main() {
-          return Events({
-            from_date: params.start_date,
-            to_date:   params.end_date
-            //event_selectors:[{event:'10 Spot Viewed'},{event:'Article Selected'},{event:'MySI Viewed'},{event:'News Viewed'},{event:'Olypics Viewed'},{event:'Score Viewed'}]
-          })
-          .groupBy(["name",function(event){ return new Date(event.time).getDay()}], mixpanel.reducer.count())
-          .map(function(item){
-            return {
-              "*Event*": item.key[0],
-              "Day of Week": item.key[1],
-              "Tally of Views": item.value
-            }
-          })
-        }, params
-        ).done(function(results){
-          var data = []
-          var segment = {}
-          console.log(results);
-          _.each(results, function(value){
-            segment[value['*Event*']] ={}
-          })
-          _.each(results, function(value){
-            _.each(segment, function (object, key) {
-              var day
-              if(key === value['*Event*']){
-                if(value['Day of Week'] === 0){
-                  day = "Sunday"
-                }else if (value['Day of Week'] === 1) {
-                  day = "Monday"
-                }else if (value['Day of Week'] === 2) {
-                  day = "Tuesday"
-                }else if (value['Day of Week'] === 3) {
-                  day = "Wednesday"
-                }else if (value['Day of Week'] === 4) {
-                  day = "Thursday"
-                }else if (value['Day of Week'] === 5) {
-                  day = "Friday"
-                }else if (value['Day of Week'] === 6) {
-                  day = "Saturday"
-                }
-                segment[value['*Event*']][day] = value['Tally of Views']
-              }
-            })
-          })
-          console.log(segment);
-          var chart = $('#graph').MPChart({chartType: 'line', highchartsOptions: {
-            legend: {
-              enabled: false,
-              y: -7
-            }
-          }})
-          chart.MPChart('setData', segment)
-          var table = $('#table').MPTable({
-            showPercentages: true,
-            firstColHeader: 'Events By Day of Week'
-          })
-          //table.MPTable('setData',segment)
+          var eventName = eventSelect.MPEventSelect('value'),
+          propName  = propSelect.MPPropertySelect('value'),
+          dateRange = dateSelect.MPDatepicker('value'),
+          bucket = bucketSelect.MPSelect('value');
+          $('.contract').show()
+          runEventQuery(eventName, propName, dateRange, bucket)
         })
-      };
-      runQuery()
-      dateSelect.on('change', runQuery);
+      })
+      runQuery() // run initial query to show data from default time frame
+      eventSelect.on('change', function(e, eventName) {
+        propSelect.MPPropertySelect('setEvent', eventName);
+        var eventName = eventSelect.MPEventSelect('value')
+        var propName  = propSelect.MPPropertySelect('value')
+        var dateRange = dateSelect.MPDatepicker('value')
+        var bucket = bucketSelect.MPSelect('value')
+        $('#propSelect').show()
+        $("#by").show();
+        $('.contract').show()
+        $('.expand').hide()
+        runEventQuery(eventName, propName, dateRange, bucket);
+        var query = {
+          'event': 'Selector Changed',
+          'properties': {
+            'token': 'ca9cd5c31c3325af1f911aaaf633ca44',
+            'Report': 'Events by Day or Hour',
+            'Selector': 'Events',
+            'distinct_id': id,
+            'Project id': id,
+            'Local Hour': new Date().getHours()
+          }
+        }
+        var stringVersion = JSON.stringify(query)
+        var encoded = window.btoa(stringVersion)
+        $.ajax({
+          url: "https://api.mixpanel.com/track/?data="+encoded
+        })
+      });
+      propSelect.on('change', function(){
+        var eventName = eventSelect.MPEventSelect('value'),
+        propName  = propSelect.MPPropertySelect('value'),
+        dateRange = dateSelect.MPDatepicker('value'),
+        bucket = bucketSelect.MPSelect('value');
+        $('.contract').show()
+        runEventQuery(eventName, propName, dateRange, bucket)
+        var query = {
+          'event': 'Selector Changed',
+          'properties': {
+            'token': 'ca9cd5c31c3325af1f911aaaf633ca44',
+            'Report': 'Events by Day or Hour',
+            'Selector': 'Properties',
+            'distinct_id': id,
+            'Project id': id,
+            'Local Hour': new Date().getHours()
+          }
+        }
+        var stringVersion = JSON.stringify(query)
+        var encoded = window.btoa(stringVersion)
+        $.ajax({
+          url: "https://api.mixpanel.com/track/?data="+encoded
+        })
+      })
+      bucketSelect.on('change', function(){
+        if($("#propSelect").length){
+          var eventName = eventSelect.MPEventSelect('value'),
+          propName  = propSelect.MPPropertySelect('value'),
+          dateRange = dateSelect.MPDatepicker('value'),
+          bucket = bucketSelect.MPSelect('value');
+          runEventQuery(eventName, propName, dateRange, bucket)
+          var query = {
+            'event': 'Selector Changed',
+            'properties': {
+              'token': 'ca9cd5c31c3325af1f911aaaf633ca44',
+              'Report': 'Events by Day or Hour',
+              'Selector': 'Day or Hour',
+              'distinct_id': id,
+              'Project id': id,
+              'Local Hour': new Date().getHours()
+            }
+          }
+          var stringVersion = JSON.stringify(query)
+          var encoded = window.btoa(stringVersion)
+          $.ajax({
+            url: "https://api.mixpanel.com/track/?data="+encoded
+          })
+        }else{
+          var eventName = eventSelect.MPEventSelect('value'),
+          dateRange = dateSelect.MPDatepicker('value'),
+          bucket = bucketSelect.MPSelect('value');
+          runEventQuery(eventName, propName, dateRange, bucket)
+          var query = {
+            'event': 'Selector Changed',
+            'properties': {
+              'token': 'ca9cd5c31c3325af1f911aaaf633ca44',
+              'Report': 'Events by Day or Hour',
+              'Selector': 'Day or Hour',
+              'distinct_id': id,
+              'Project id': id,
+              'Local Hour': new Date().getHours()
+            }
+          }
+          var stringVersion = JSON.stringify(query)
+          var encoded = window.btoa(stringVersion)
+          $.ajax({
+            url: "https://api.mixpanel.com/track/?data="+encoded
+          })
+        }
+
+      })
+      dateSelect.on('change', function(){
+        if($("#propSelect").length){
+          var eventName = eventSelect.MPEventSelect('value'),
+          propName  = propSelect.MPPropertySelect('value'),
+          dateRange = dateSelect.MPDatepicker('value'),
+          bucket = bucketSelect.MPSelect('value');
+          runEventQuery(eventName, propName, dateRange, bucket)
+          var query = {
+            'event': 'Selector Changed',
+            'properties': {
+              'token': 'ca9cd5c31c3325af1f911aaaf633ca44',
+              'Report': 'Events by Day or Hour',
+              'Selector': 'Date',
+              'distinct_id': id,
+              'Project id': id,
+              'Local Hour': new Date().getHours()
+            }
+          }
+          var stringVersion = JSON.stringify(query)
+          console.log('JSON version of data',stringVersion);
+          var encoded = window.btoa(stringVersion)
+          $.ajax({
+            url: "https://api.mixpanel.com/track/?data="+encoded
+          })
+        }else{
+          var eventName = eventSelect.MPEventSelect('value'),
+          dateRange = dateSelect.MPDatepicker('value'),
+          bucket = bucketSelect.MPSelect('value');
+          runEventQuery(eventName, propName, dateRange, bucket)
+          var query = {
+            'event': 'Selector Changed',
+            'properties': {
+              'token': 'ca9cd5c31c3325af1f911aaaf633ca44',
+              'Report': 'Events by Day or Hour',
+              'Selector': 'Date',
+              'distinct_id': id,
+              'Project id': id,
+              'Local Hour': new Date().getHours()
+            }
+          }
+          var stringVersion = JSON.stringify(query)
+          var encoded = window.btoa(stringVersion)
+          $.ajax({
+            url: "https://api.mixpanel.com/track/?data="+encoded
+          })
+        }
+      });
+      // propSelect.on('change', runEventQuery)
+      // bucketSelect.on('change', runEventQuery)
+      // dateSelect.on('change', runEventQuery);
+    </script>
+    <script src="js/helperFunctions.js" charset="utf-8"></script> <!--link to helper function-->
+    <script type="text/javascript"> // mixpanel tracking
+      var reportLoaded = {
+        'event': 'Report Loaded',
+        'properties': {
+          'token': 'ca9cd5c31c3325af1f911aaaf633ca44',
+          'Report': 'Events by Day or Hour',
+          'distinct_id': id,
+          'Project id': id,
+          'Local Hour': new Date().getHours()
+        }
+      }
+      var stringVersion = JSON.stringify(reportLoaded)
+      var encoded = window.btoa(stringVersion)
+      $.ajax({
+        url: "https://api.mixpanel.com/track/?data="+encoded
+      })
     </script>
   </body>
 </html>
